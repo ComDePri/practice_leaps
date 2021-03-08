@@ -8771,9 +8771,9 @@ var BlockScene = function (_util$Entity3) {
       this.isRow = Math.random() < 0.5;
       this.p = [];
       if (this.isRow) {
-        this.p = [randomInt(2, 3), randomInt(2, 3)];
+        this.p = [randomInt(2, 3), randomInt(2, 7)];
       } else {
-        this.p = [randomInt(2, 4), randomInt(2, 3)];
+        this.p = [randomInt(2, 8), randomInt(2, 3)];
       }
 
       this.sourceFirst = Math.random() < 0.5;
