@@ -8771,13 +8771,15 @@ var BlockScene = function (_util$Entity3) {
       this.isRow = Math.random() < 0.5;
       this.p = [];
       if (this.isRow) {
-        this.p = [randomInt(0, 10), randomInt(3, 4)];
+        this.p = [randomInt(2, 3), randomInt(2, 3)];
       } else {
-        this.p = [randomInt(3, 11), randomInt(0, 4)];
+        this.p = [randomInt(2, 4), randomInt(2, 3)];
       }
 
       this.sourceFirst = Math.random() < 0.5;
       this.sourceColors = shuffle(SOURCE_COLORS);
+      // console.log("is row: " + String(this.isRow));
+      // console.log('p: ' + String(this.p));
     }
   }, {
     key: "resetTrial",
