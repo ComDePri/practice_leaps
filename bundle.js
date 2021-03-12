@@ -8737,6 +8737,8 @@ var BlockScene = function (_util$Entity3) {
       this.currentTrial = 1;
       this.canChangeTrial = false;
 
+      this.mouseOverBlock = null;
+
       this.container = new PIXI.Container();
       sceneLayer.addChild(this.container);
 
@@ -8753,11 +8755,13 @@ var BlockScene = function (_util$Entity3) {
       this.onKeyUp = this.onKeyUp.bind(this);
       this.nextTrial = this.nextTrial.bind(this);
       this.resetTrial = this.resetTrial.bind(this);
+      this.onMouseMove = this.onMouseMove.bind(this);
       document.getElementById("continue-btn").addEventListener("click", this.nextTrial);
       document.getElementById("reset-btn").addEventListener("click", this.resetTrial);
       document.getElementById("modal-confirm-cancel-button").addEventListener("click", this.cancelModal);
       document.getElementById("modal-confirm-done-button").addEventListener("click", this.confirmDone);
       document.getElementById("pixi-canvas").addEventListener("keyup", this.onKeyUp);
+      document.getElementById("pixi-canvas").addEventListener("mousemove", this.onMouseMove);
 
       // Don't allow player to leave early if allowEarlyExit is false
       // const doneAddingButton = document.getElementById("done-adding");
@@ -8784,6 +8788,8 @@ var BlockScene = function (_util$Entity3) {
   }, {
     key: "resetTrial",
     value: function resetTrial() {
+      var _this4 = this;
+
       this.container.removeChild(this.blocksContainer);
       this.canChangeTrial = false;
       document.getElementById("wrong-color-message").style.display = "none";
@@ -8800,42 +8806,57 @@ var BlockScene = function (_util$Entity3) {
       this.targetPositions = [];
 
       // Source blocks
-      for (var i = 0; i < 3; i++) {
-        var randomPoint = [];
-        if (this.isRow) {
-          randomPoint = this.sourceFirst ? [i, 0] : [i + this.p[0], this.p[1]];
+
+      var _loop = function _loop(i) {
+        randomPoint = [];
+
+        if (_this4.isRow) {
+          randomPoint = _this4.sourceFirst ? [i, 0] : [i + _this4.p[0], _this4.p[1]];
         } else {
-          randomPoint = this.sourceFirst ? [0, i] : [this.p[0], i + this.p[1]];
+          randomPoint = _this4.sourceFirst ? [0, i] : [_this4.p[0], i + _this4.p[1]];
         }
         var pos = new PIXI.Point(randomPoint[0], randomPoint[1]);
-        var rect = makeSourceShape(pos, this.sourceColors[i]);
+        var rect = makeSourceShape(pos, _this4.sourceColors[i]);
 
         rect.buttonMode = true;
-        rect.on("pointerdown", this.onPointerDown.bind(this));
-        rect.on("pointerup", this.onPointerUp.bind(this));
-        rect.on("pointermove", this.onPointerMove.bind(this));
+        rect.on("pointerdown", _this4.onPointerDown.bind(_this4));
+        rect.on("pointerup", _this4.onPointerUp.bind(_this4));
+        rect.on("pointermove", _this4.onPointerMove.bind(_this4));
         rect.interactive = true;
+        _self = _this4;
 
-        this.sourceBlocks.push(pos);
-        this.blocksContainer.addChild(rect);
+        rect.mouseover = function (mouseData) {
+          _self.mouseOverBlock = rect;
+        };
+
+        _this4.sourceBlocks.push(pos);
+        _this4.blocksContainer.addChild(rect);
+      };
+
+      for (var i = 0; i < 3; i++) {
+        var randomPoint;
+
+        var _self;
+
+        _loop(i);
       }
 
       // Target blocks
-      for (var _i = 0; _i < 3; _i++) {
+      for (var i = 0; i < 3; i++) {
         var randomPoint = [];
         if (this.isRow) {
-          randomPoint = !this.sourceFirst ? [_i, 0] : [_i + this.p[0], this.p[1]];
+          randomPoint = !this.sourceFirst ? [i, 0] : [i + this.p[0], this.p[1]];
         } else {
-          randomPoint = !this.sourceFirst ? [0, _i] : [this.p[0], _i + this.p[1]];
+          randomPoint = !this.sourceFirst ? [0, i] : [this.p[0], i + this.p[1]];
         }
 
         // const p = [11, i - 4];
-        var _pos = new PIXI.Point(randomPoint[0], randomPoint[1]);
-        var _rect = makeTargetShape(_pos);
+        var pos = new PIXI.Point(randomPoint[0], randomPoint[1]);
+        var _rect = makeTargetShape(pos);
 
         _rect.interactive = false;
 
-        this.targetBlocks.push(_pos);
+        this.targetBlocks.push(pos);
         this.blocksContainer.addChild(_rect);
       }
 
@@ -8891,14 +8912,14 @@ var BlockScene = function (_util$Entity3) {
         var gridPos = new PIXI.Point(i, 0);
         this.blockGrid.push(gridPos);
 
-        var rect = makeSourceShape(gridPos);
+        var _rect2 = makeSourceShape(gridPos);
 
-        rect.buttonMode = true;
-        rect.on("pointerdown", this.onPointerDown.bind(this));
-        rect.on("pointerup", this.onPointerUp.bind(this));
-        rect.on("pointermove", this.onPointerMove.bind(this));
+        _rect2.buttonMode = true;
+        _rect2.on("pointerdown", this.onPointerDown.bind(this));
+        _rect2.on("pointerup", this.onPointerUp.bind(this));
+        _rect2.on("pointermove", this.onPointerMove.bind(this));
 
-        this.blocksContainer.addChild(rect);
+        this.blocksContainer.addChild(_rect2);
       }
 
       this.updateBlocks();
@@ -9043,11 +9064,14 @@ var BlockScene = function (_util$Entity3) {
   }, {
     key: "onPointerDown",
     value: function onPointerDown(e) {
+      console.log("Hellii tis iksfa");
       if (this.draggingBlock) return; // Don't allow multiple drags
       if (this.timesUp) return; // Don't allow drags when time is up
 
+      console.log(e);
 
       this.draggingBlock = e.currentTarget;
+
       this.draggingPointerId = e.data.pointerId; // Keep track of which finger is used 
       this.draggingBlockStartGridPosition = pixelPosToGridPos(this.draggingBlock.position);
       this.startDragTime = Date.now();
@@ -9100,7 +9124,8 @@ var BlockScene = function (_util$Entity3) {
     key: "onPointerMove",
     value: function onPointerMove(e) {
       if (!this.draggingBlock) return;
-      if (e.data.pointerId !== this.draggingPointerId) return;
+      // if(e.data.pointerId !== this.draggingPointerId) return;
+
 
       this.draggingBlock.position = subtract(e.data.getLocalPosition(app$1.stage), this.blocksContainer.position);
     }
@@ -9114,8 +9139,51 @@ var BlockScene = function (_util$Entity3) {
           this.nextTrial();
         } else if (keyValue == 2) {
           this.resetTrial();
+        } else if (keyValue == 3) {
+          // canvas.addEventListener('pointerdown', this.onPointerDown);
+          // document.dispatchEvent(new PointerEvent('pointerdown'));
+          // const gridPos = pixelPosToGridPos([this.mouseX, this.mouseY]);
+          // console.log(String(this.mouseX) + ", " + String(this.mouseY));
+          // console.log(gridPos);
+          var mouseEvent = new PointerEvent('pointerdown', {
+            bubbles: true,
+            cancelable: true
+          });
+          // app.view.dispatchEvent(mouseEvent);
+          // document.getElementById('pixi-canvas').dispatchEvent(mouseEvent);
+          // this.mouseOverBlock.emit("pointerdown");
+          // app.renderer.plugins.interaction.emit(mouseEvent);
+          this.draggingBlock = this.mouseOverBlock;
+          this.blocksContainer.setChildIndex(this.draggingBlock, this.blocksContainer.children.length - 1);
+          var gridPos = pixelPosToGridPos(this.draggingBlock.position);
+          this.sourceBlocks = removeFromArray(this.sourceBlocks, gridPos);
+          this.canChangeTrial = true;
+          console.log(this.draggingBlock);
+        } else if (keyValue == 4) {
+          this.dropBlock(this.draggingBlock, this.draggingBlock.position);
+
+          // this.unhighlightBlock(this.draggingBlock);
+
+          this.draggingBlock = null;
+          this.draggingPointerId = null;
+          this.updateBlocks();
+
+          document.getElementById("add-shape").disabled = false;
+          this.changedShape = true;
+
+          // Re-enable html buttons
+          document.getElementById("html-layer").className = "";
+
+          this.emit("droppedBlock");
         }
       }
+    }
+  }, {
+    key: "onMouseMove",
+    value: function onMouseMove(e) {
+      this.mouseX = e.clientX;
+      this.mouseY = e.clientY;
+      // console.log(String(this.mouseX) + ", " + String(this.mouseY));
     }
   }, {
     key: "updateBlocks",
@@ -9468,7 +9536,7 @@ var GalleryScene = function (_util$Entity4) {
   createClass(GalleryScene, [{
     key: "setup",
     value: function setup() {
-      var _this5 = this;
+      var _this6 = this;
 
       var ROWS = 5;
       var COLS = 10;
@@ -9486,7 +9554,7 @@ var GalleryScene = function (_util$Entity4) {
 
       var pageContainer = void 0;
 
-      var _loop = function _loop(i) {
+      var _loop2 = function _loop2(i) {
         var row = Math.floor(i % ITEMS_PER_PAGE / COLS);
         var col = Math.floor(i % ITEMS_PER_PAGE % COLS);
 
@@ -9494,7 +9562,7 @@ var GalleryScene = function (_util$Entity4) {
         if (i % (ROWS * COLS) == 0) {
           pageContainer = new PIXI.Container();
           pageContainer.visible = false;
-          _this5.pages.addChild(pageContainer);
+          _this6.pages.addChild(pageContainer);
         }
         var galleryShapeCenter = new PIXI.Point(70 + col * 90, 95 + row * 85);
 
@@ -9506,7 +9574,7 @@ var GalleryScene = function (_util$Entity4) {
         pageContainer.addChild(galleryBg);
 
         galleryBg.on("pointerdown", function (e) {
-          return _this5.onToggleShape(galleryBg, i);
+          return _this6.onToggleShape(galleryBg, i);
         });
         galleryBg.buttonMode = true;
         galleryBg.interactive = true;
@@ -9547,17 +9615,17 @@ var GalleryScene = function (_util$Entity4) {
       };
 
       for (var i = 0; i < galleryShapes.length; i++) {
-        _loop(i);
+        _loop2(i);
       }
 
       // HTML
       document.getElementById("selection-gui").style.display = "block";
       document.getElementById("done-selection").addEventListener("click", this.onDoneSelection.bind(this));
       document.getElementById("previous-page-button").addEventListener("click", function (e) {
-        return _this5.changePage(_this5.pageNumber - 1);
+        return _this6.changePage(_this6.pageNumber - 1);
       });
       document.getElementById("next-page-button").addEventListener("click", function (e) {
-        return _this5.changePage(_this5.pageNumber + 1);
+        return _this6.changePage(_this6.pageNumber + 1);
       });
 
       this.updateDoneButton();
