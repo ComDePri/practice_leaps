@@ -8755,13 +8755,14 @@ var BlockScene = function (_util$Entity3) {
       this.onKeyUp = this.onKeyUp.bind(this);
       this.nextTrial = this.nextTrial.bind(this);
       this.resetTrial = this.resetTrial.bind(this);
-      this.onMouseMove = this.onMouseMove.bind(this);
+
       document.getElementById("continue-btn").addEventListener("click", this.nextTrial);
       document.getElementById("reset-btn").addEventListener("click", this.resetTrial);
       document.getElementById("modal-confirm-cancel-button").addEventListener("click", this.cancelModal);
       document.getElementById("modal-confirm-done-button").addEventListener("click", this.confirmDone);
       document.getElementById("pixi-canvas").addEventListener("keyup", this.onKeyUp);
-      document.getElementById("pixi-canvas").addEventListener("mousemove", this.onMouseMove);
+
+      document.getElementById("pixi-canvas").focus();
 
       // Don't allow player to leave early if allowEarlyExit is false
       // const doneAddingButton = document.getElementById("done-adding");
@@ -8819,11 +8820,16 @@ var BlockScene = function (_util$Entity3) {
         var rect = makeSourceShape(pos, _this4.sourceColors[i]);
 
         rect.buttonMode = true;
-        rect.on("pointerdown", _this4.onPointerDown.bind(_this4));
-        rect.on("pointerup", _this4.onPointerUp.bind(_this4));
+        if (!buttonControls) {
+          rect.on("pointerdown", _this4.onPointerDown.bind(_this4));
+          rect.on("pointerup", _this4.onPointerUp.bind(_this4));
+        }
         rect.on("pointermove", _this4.onPointerMove.bind(_this4));
         rect.interactive = true;
         _self = _this4;
+
+        // This is useful for when button controls are enabled.
+        // Button controls are when the player can choose the block by pressing a button on the keyboard.
 
         rect.mouseover = function (mouseData) {
           _self.mouseOverBlock = rect;
@@ -9064,11 +9070,9 @@ var BlockScene = function (_util$Entity3) {
   }, {
     key: "onPointerDown",
     value: function onPointerDown(e) {
-      console.log("Hellii tis iksfa");
+
       if (this.draggingBlock) return; // Don't allow multiple drags
       if (this.timesUp) return; // Don't allow drags when time is up
-
-      console.log(e);
 
       this.draggingBlock = e.currentTarget;
 
@@ -9087,7 +9091,6 @@ var BlockScene = function (_util$Entity3) {
       }
 
       // Reorder so this block is on top
-      // this.blocksContainer.setChildIndex(this.draggingBlock, this.blocksContainer.children.length - 1);
       this.blocksContainer.setChildIndex(this.draggingBlock, this.blocksContainer.children.length - 1);
 
       var gridPos = pixelPosToGridPos(this.draggingBlock.position);
@@ -9130,6 +9133,59 @@ var BlockScene = function (_util$Entity3) {
       this.draggingBlock.position = subtract(e.data.getLocalPosition(app$1.stage), this.blocksContainer.position);
     }
   }, {
+    key: "pickupBlockUsingButtons",
+    value: function pickupBlockUsingButtons() {
+      // This function is similar to the onPointerDown but without the things specific 
+      // for the pointer event.
+
+      if (this.draggingBlock) return; // Don't allow multiple drags
+      if (this.timesUp) return; // Don't allow drags when time is up
+
+      this.draggingBlock = this.mouseOverBlock;
+      this.draggingBlockStartGridPosition = pixelPosToGridPos(this.draggingBlock.position);
+      this.startDragTime = Date.now();
+
+      var blockColor = this.draggingBlock.graphicsData[0].fillColor;
+      if (blockColor != parseInt(String(TARGET_COLOR))) {
+        //TODO You have some cleaning up to do.
+        // alert("You chose the wrong color!");
+        document.getElementById("wrong-color-message").style.display = "block";
+        this.draggingBlock = null;
+        this.disableBlocksInteractivity();
+        return;
+      }
+
+      this.blocksContainer.setChildIndex(this.draggingBlock, this.blocksContainer.children.length - 1);
+
+      var gridPos = pixelPosToGridPos(this.draggingBlock.position);
+      this.sourceBlocks = removeFromArray(this.sourceBlocks, gridPos);
+      this.canChangeTrial = true;
+
+      document.getElementById("html-layer").className = "no-pointer-events";
+    }
+  }, {
+    key: "dropBlockUsingButtons",
+    value: function dropBlockUsingButtons() {
+      // This function is basically the same as the onPointerUp 
+      // but without the parameter e :P
+
+      if (!this.draggingBlock) return;
+
+      this.dropBlock(this.draggingBlock, this.draggingBlock.position);
+
+      this.draggingBlock = null;
+      this.draggingPointerId = null;
+      this.updateBlocks();
+
+      document.getElementById("add-shape").disabled = false;
+      this.changedShape = true;
+
+      // Re-enable html buttons
+      document.getElementById("html-layer").className = "";
+
+      this.emit("droppedBlock");
+    }
+  }, {
     key: "onKeyUp",
     value: function onKeyUp(e) {
       // If they pressed a number key, add the shape
@@ -9140,50 +9196,12 @@ var BlockScene = function (_util$Entity3) {
         } else if (keyValue == 2) {
           this.resetTrial();
         } else if (keyValue == 3) {
-          // canvas.addEventListener('pointerdown', this.onPointerDown);
-          // document.dispatchEvent(new PointerEvent('pointerdown'));
-          // const gridPos = pixelPosToGridPos([this.mouseX, this.mouseY]);
-          // console.log(String(this.mouseX) + ", " + String(this.mouseY));
-          // console.log(gridPos);
-          var mouseEvent = new PointerEvent('pointerdown', {
-            bubbles: true,
-            cancelable: true
-          });
-          // app.view.dispatchEvent(mouseEvent);
-          // document.getElementById('pixi-canvas').dispatchEvent(mouseEvent);
-          // this.mouseOverBlock.emit("pointerdown");
-          // app.renderer.plugins.interaction.emit(mouseEvent);
-          this.draggingBlock = this.mouseOverBlock;
-          this.blocksContainer.setChildIndex(this.draggingBlock, this.blocksContainer.children.length - 1);
-          var gridPos = pixelPosToGridPos(this.draggingBlock.position);
-          this.sourceBlocks = removeFromArray(this.sourceBlocks, gridPos);
-          this.canChangeTrial = true;
-          console.log(this.draggingBlock);
+          if (buttonControls) this.pickupBlockUsingButtons();
         } else if (keyValue == 4) {
-          this.dropBlock(this.draggingBlock, this.draggingBlock.position);
-
-          // this.unhighlightBlock(this.draggingBlock);
-
-          this.draggingBlock = null;
-          this.draggingPointerId = null;
-          this.updateBlocks();
-
-          document.getElementById("add-shape").disabled = false;
-          this.changedShape = true;
-
-          // Re-enable html buttons
-          document.getElementById("html-layer").className = "";
-
-          this.emit("droppedBlock");
+          // pointer up 
+          if (buttonControls) this.dropBlockUsingButtons();
         }
       }
-    }
-  }, {
-    key: "onMouseMove",
-    value: function onMouseMove(e) {
-      this.mouseX = e.clientX;
-      this.mouseY = e.clientY;
-      // console.log(String(this.mouseX) + ", " + String(this.mouseY));
     }
   }, {
     key: "updateBlocks",
@@ -9822,8 +9840,10 @@ var searchParams = new URLSearchParams(window.location.search);
 var allowEarlyExit = searchParams.get("allowEarlyExit") !== "false" && searchParams.get("allowEarlyExit") !== "0";
 var showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
 var numTrials = searchParams.get("trials") ? parseInt(searchParams.get("trials")) : 30;
-console.log(searchParams.get("trials"));
-console.log(numTrials);
+
+var buttonControls = searchParams.get("buttonControls") === "true";
+console.log(buttonControls);
+
 var galleryShapes = [];
 var searchScore = 0.33;
 var redmetricsConnection = void 0;
