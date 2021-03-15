@@ -8835,6 +8835,10 @@ var BlockScene = function (_util$Entity3) {
           _self.mouseOverBlock = rect;
         };
 
+        rect.mouseout = function (mouseData) {
+          _self.mouseOverBlock = null;
+        };
+
         _this4.sourceBlocks.push(pos);
         _this4.blocksContainer.addChild(rect);
       };
@@ -9140,6 +9144,7 @@ var BlockScene = function (_util$Entity3) {
 
       if (this.draggingBlock) return; // Don't allow multiple drags
       if (this.timesUp) return; // Don't allow drags when time is up
+      if (!this.mouseOverBlock) return;
 
       this.draggingBlock = this.mouseOverBlock;
       this.draggingBlockStartGridPosition = pixelPosToGridPos(this.draggingBlock.position);
@@ -9195,11 +9200,14 @@ var BlockScene = function (_util$Entity3) {
           this.nextTrial();
         } else if (keyValue == 2) {
           this.resetTrial();
-        } else if (keyValue == 3) {
-          if (buttonControls) this.pickupBlockUsingButtons();
-        } else if (keyValue == 4) {
-          // pointer up 
-          if (buttonControls) this.dropBlockUsingButtons();
+        } else if (keyValue == 3 || keyValue == 4) {
+          if (buttonControls) {
+            if (this.draggingBlock) {
+              this.dropBlockUsingButtons();
+            } else {
+              this.pickupBlockUsingButtons();
+            }
+          }
         }
       }
     }
