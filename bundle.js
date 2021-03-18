@@ -8375,12 +8375,11 @@ var ParallelEntities = function (_Entity2) {
 
 var BLOCK_WIDTH = 50;
 var MAX_SEARCH_TIME = 12 * 60 * 1000;
-var BLOCK_COLOR = 0x81e700;
 // 0xD7191C, 0xFDAE61, 0xABD9E9
 var SOURCE_COLORS = [0xD7191C, 0xFDAE61, 0xABD9E9];
 var TARGET_COLOR = 0xFDAE61;
 
-var HIGHLIGHTED_BLOCK_COLOR = 0x59853b;
+var HIGHLIGHTED_BLOCK_COLOR = 0x724519;
 var DRAG_HIGHLIGHT_PERIOD = 500;
 var letsPlayScene = false;
 
@@ -8967,7 +8966,7 @@ var BlockScene = function (_util$Entity3) {
         for (var _iterator2 = this.highlightedBlocks[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
           var block = _step2.value;
 
-          var color = cyclicLerpColor(BLOCK_COLOR, HIGHLIGHTED_BLOCK_COLOR, timeSinceStart % DRAG_HIGHLIGHT_PERIOD / DRAG_HIGHLIGHT_PERIOD);
+          var color = cyclicLerpColor(this.currentBlockColor, HIGHLIGHTED_BLOCK_COLOR, timeSinceStart % DRAG_HIGHLIGHT_PERIOD / DRAG_HIGHLIGHT_PERIOD);
           drawBlock(block, color);
         }
       } catch (err) {
@@ -9069,7 +9068,7 @@ var BlockScene = function (_util$Entity3) {
     key: "unhighlightBlock",
     value: function unhighlightBlock(blockGraphic) {
       this.highlightedBlocks.delete(blockGraphic);
-      drawBlock(blockGraphic, BLOCK_COLOR);
+      drawBlock(blockGraphic, this.currentBlockColor);
     }
   }, {
     key: "onPointerDown",
@@ -9085,6 +9084,8 @@ var BlockScene = function (_util$Entity3) {
       this.startDragTime = Date.now();
 
       var blockColor = this.draggingBlock.graphicsData[0].fillColor;
+      this.currentBlockColor = blockColor;
+
       if (blockColor != parseInt(String(TARGET_COLOR))) {
         //TODO You have some cleaning up to do.
         // alert("You chose the wrong color!");
@@ -9105,6 +9106,7 @@ var BlockScene = function (_util$Entity3) {
 
       // Disable html buttons
       document.getElementById("html-layer").className = "no-pointer-events";
+      this.highlightedBlocks.add(this.draggingBlock);
     }
   }, {
     key: "onPointerUp",
@@ -9112,8 +9114,7 @@ var BlockScene = function (_util$Entity3) {
       if (!this.draggingBlock) return;
 
       this.dropBlock(this.draggingBlock, this.draggingBlock.position);
-
-      // this.unhighlightBlock(this.draggingBlock);
+      this.unhighlightBlock(this.draggingBlock);
 
       this.draggingBlock = null;
       this.draggingPointerId = null;
@@ -9151,6 +9152,8 @@ var BlockScene = function (_util$Entity3) {
       this.startDragTime = Date.now();
 
       var blockColor = this.draggingBlock.graphicsData[0].fillColor;
+      this.currentBlockColor = blockColor;
+
       if (blockColor != parseInt(String(TARGET_COLOR))) {
         //TODO You have some cleaning up to do.
         // alert("You chose the wrong color!");
@@ -9167,6 +9170,8 @@ var BlockScene = function (_util$Entity3) {
       this.canChangeTrial = true;
 
       document.getElementById("html-layer").className = "no-pointer-events";
+
+      this.highlightedBlocks.add(this.draggingBlock);
     }
   }, {
     key: "dropBlockUsingButtons",
@@ -9177,6 +9182,7 @@ var BlockScene = function (_util$Entity3) {
       if (!this.draggingBlock) return;
 
       this.dropBlock(this.draggingBlock, this.draggingBlock.position);
+      this.unhighlightBlock(this.draggingBlock);
 
       this.draggingBlock = null;
       this.draggingPointerId = null;
@@ -9208,6 +9214,8 @@ var BlockScene = function (_util$Entity3) {
               this.pickupBlockUsingButtons();
             }
           }
+        } else if (keyValue == 6) {
+          console.log(this.currentBlockColor);
         }
       }
     }
