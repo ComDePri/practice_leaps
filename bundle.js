@@ -8535,9 +8535,19 @@ function update(timeScale) {
   app$1.renderer.render(app$1.stage);
 }
 
-function updateEventDatabase(event) {
+function updateEventDatabase(event, trialNumber, sourcePos, targets) {
+  // timestamp - event number - trial number - source x y, target x y
   var timeSinceStart = Date.now() - startAt;
-  DB.ref(dbRef + '/events').update(defineProperty({}, timeSinceStart, event));
+  DB.ref(dbRef + '/events/' + timeSinceStart).update({
+    "event_number": event,
+    "trial_number": trialNumber,
+    "source_x": sourcePos.x,
+    "source_y": sourcePos.y,
+    "target1_x": targets[0].x,
+    "target1_y": targets[0].y,
+    "target2_x": targets[1].x,
+    "target2_y": targets[1].y
+  });
 }
 
 function updateNewTrialInfo(trialNumber, sourcePos, targets) {
@@ -8640,6 +8650,8 @@ var BlockScene = function (_util$Entity2) {
 
       this.mouseOverBlock = null;
 
+      this.sourcePos = 0;
+
       this.container = new PIXI.Container();
       sceneLayer.addChild(this.container);
 
@@ -8690,8 +8702,8 @@ var BlockScene = function (_util$Entity2) {
   }, {
     key: "resetTrial",
     value: function resetTrial() {
-      updateEventDatabase(sceneEvents["resetTrial"]);
       this.startTrial();
+      updateEventDatabase(sceneEvents["resetTrial"], this.currentTrial, this.sourcePos, this.targetPositions);
     }
   }, {
     key: "startTrial",
@@ -8793,8 +8805,8 @@ var BlockScene = function (_util$Entity2) {
         this.generateRandomVariables();
         this.startTrial();
         this.canChangeTrial = false;
+        updateEventDatabase(sceneEvents["nextTrial"], this.currentTrial, this.sourcePos, this.targetPositions);
       }
-      updateEventDatabase(sceneEvents["nextTrial"]);
     }
   }, {
     key: "disableBlocksInteractivity",
@@ -8983,7 +8995,7 @@ var BlockScene = function (_util$Entity2) {
         document.getElementById("wrong-color-message").style.display = "block";
         this.draggingBlock = null;
         this.disableBlocksInteractivity();
-        updateEventDatabase(sceneEvents["pickupWrongColor"]);
+        updateEventDatabase(sceneEvents["pickupWrongColor"], this.currentTrial, this.sourcePos, this.targetPositions);
         return;
       }
 
@@ -9000,7 +9012,7 @@ var BlockScene = function (_util$Entity2) {
       document.getElementById("html-layer").className = "no-pointer-events";
       this.highlightedBlocks.add(this.draggingBlock);
 
-      updateEventDatabase(sceneEvents["pickupCorrectColor"]);
+      updateEventDatabase(sceneEvents["pickupCorrectColor"], this.currentTrial, this.sourcePos, this.targetPositions);
     }
   }, {
     key: "onPointerUp",
@@ -9054,7 +9066,7 @@ var BlockScene = function (_util$Entity2) {
         document.getElementById("wrong-color-message").style.display = "block";
         this.draggingBlock = null;
         this.disableBlocksInteractivity();
-        updateEventDatabase(sceneEvents["pickupWrongColor"]);
+        updateEventDatabase(sceneEvents["pickupWrongColor"], this.currentTrial, this.sourcePos, this.targetPositions);
         return;
       }
 
@@ -9067,7 +9079,7 @@ var BlockScene = function (_util$Entity2) {
       document.getElementById("html-layer").className = "no-pointer-events";
 
       this.highlightedBlocks.add(this.draggingBlock);
-      updateEventDatabase(sceneEvents["pickupCorrectColor"]);
+      updateEventDatabase(sceneEvents["pickupCorrectColor"], this.currentTrial, this.sourcePos, this.targetPositions);
     }
   }, {
     key: "dropBlockUsingButtons",
@@ -9101,7 +9113,7 @@ var BlockScene = function (_util$Entity2) {
         if (keyValue == 1) {
           this.nextTrial();
         } else if (keyValue == 2) {
-          this.startTrial();
+          this.resetTrial();
         } else if (keyValue == 3 || keyValue == 4) {
           if (buttonControls) {
             if (this.draggingBlock) {
@@ -9199,23 +9211,31 @@ var BlockScene = function (_util$Entity2) {
         // If closer to the target but not in the allowed boundary, attach it to the source
 
         block.position = gridPosToPixelPos(closestTargetPos);
+        console.log("hellooooo");
+        console.log(this.targetPositions);
+        console.log(closestTargetPos);
 
         if (!contains(this.targetPositions, closestTargetPos)) {
           // alert("wrong position");
           document.getElementById("wrong-position-message").style.display = "block";
-          updateEventDatabase(sceneEvents["droppedWrongPosition"]);
+          updateEventDatabase(sceneEvents["droppedWrongPosition"], this.currentTrial, closestTargetPos, this.targetPositions);
         } else {
           document.getElementById("correct-message").style.display = "block";
-          updateEventDatabase(sceneEvents["success"]);
+          updateEventDatabase(sceneEvents["success"], this.currentTrial, closestTargetPos, this.targetPositions);
         }
         // this.targetBlocks.push(closestTargetPos);
       } else {
         // If closer to the source, attach it to the source. 
+        console.log("hellooooo");
+        console.log(this.targetPositions);
+        console.log(closestSourcePos);
+
         block.position = gridPosToPixelPos(closestSourcePos);
         document.getElementById("early-release-message").style.display = "block";
-        updateEventDatabase(sceneEvents["droppedEarly"]);
+        updateEventDatabase(sceneEvents["droppedEarly"], this.currentTrial, closestSourcePos, this.targetPositions);
       }
       this.disableBlocksInteractivity();
+      this.sourcePos = closestTargetPos;
 
       // block.position = gridPosToPixelPos(closestSourcePos);
       // this.blockGrid.push(closestSourcePos);
