@@ -8645,6 +8645,7 @@ var BlockScene = function (_util$Entity2) {
       this.changedShape = true;
 
       this.numberTrials = numTrials;
+      this.transitionDelay = transitionDelay;
       this.currentTrial = 1;
       this.canChangeTrial = false;
 
@@ -9135,7 +9136,7 @@ var BlockScene = function (_util$Entity2) {
     key: "startTimer",
     value: function startTimer(functionName) {
       console.log("In the timer function");
-      var timer_val = 300;
+      var timer_val = this.transitionDelay;
       var interval = setInterval(function () {
         timer_val--;
         if (timer_val <= 0) {
@@ -9554,6 +9555,7 @@ var searchParams = new URLSearchParams(window.location.search);
 var allowEarlyExit = searchParams.get("allowEarlyExit") !== "false" && searchParams.get("allowEarlyExit") !== "0";
 var showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
 var numTrials = searchParams.get("trials") ? parseInt(searchParams.get("trials")) : 30;
+var transitionDelay = searchParams.get("transitionDelay") ? parseInt(searchParams.get("transitionDelay")) : 300;
 
 var buttonControls = searchParams.get("buttonControls") === "true";
 console.log(buttonControls);
