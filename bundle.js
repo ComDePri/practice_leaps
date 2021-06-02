@@ -8806,6 +8806,8 @@ var BlockScene = function (_util$Entity2) {
         this.startTrial();
         this.canChangeTrial = false;
         updateEventDatabase(sceneEvents["nextTrial"], this.currentTrial, this.sourcePos, this.targetPositions);
+      } else {
+        this.done = true;
       }
     }
   }, {
@@ -8898,7 +8900,7 @@ var BlockScene = function (_util$Entity2) {
       document.getElementById("blocks-gui").style.display = "none";
 
       document.getElementById("add-shape").removeEventListener("click", this.onAddShape);
-      document.getElementById("done-adding").removeEventListener("click", this.onAttemptDone);
+      // document.getElementById("done-adding").removeEventListener("click", this.onAttemptDone);
       document.getElementById("modal-confirm-cancel-button").removeEventListener("click", this.cancelModal);
       document.getElementById("modal-confirm-done-button").removeEventListener("click", this.confirmDone);
     }
@@ -8996,6 +8998,7 @@ var BlockScene = function (_util$Entity2) {
         this.draggingBlock = null;
         this.disableBlocksInteractivity();
         updateEventDatabase(sceneEvents["pickupWrongColor"], this.currentTrial, this.sourcePos, this.targetPositions);
+        this.startTimer(this.resetTrial);
         return;
       }
 
@@ -9067,6 +9070,7 @@ var BlockScene = function (_util$Entity2) {
         this.draggingBlock = null;
         this.disableBlocksInteractivity();
         updateEventDatabase(sceneEvents["pickupWrongColor"], this.currentTrial, this.sourcePos, this.targetPositions);
+        this.startTimer(this.resetTrial);
         return;
       }
 
@@ -9126,6 +9130,19 @@ var BlockScene = function (_util$Entity2) {
           console.log(this.currentBlockColor);
         }
       }
+    }
+  }, {
+    key: "startTimer",
+    value: function startTimer(functionName) {
+      console.log("In the timer function");
+      var timer_val = 300;
+      var interval = setInterval(function () {
+        timer_val--;
+        if (timer_val <= 0) {
+          clearInterval(interval);
+          functionName();
+        }
+      }, 1);
     }
   }, {
     key: "updateBlocks",
@@ -9219,9 +9236,11 @@ var BlockScene = function (_util$Entity2) {
           // alert("wrong position");
           document.getElementById("wrong-position-message").style.display = "block";
           updateEventDatabase(sceneEvents["droppedWrongPosition"], this.currentTrial, closestTargetPos, this.targetPositions);
+          this.startTimer(this.resetTrial);
         } else {
           document.getElementById("correct-message").style.display = "block";
           updateEventDatabase(sceneEvents["success"], this.currentTrial, closestTargetPos, this.targetPositions);
+          this.startTimer(this.nextTrial);
         }
         // this.targetBlocks.push(closestTargetPos);
       } else {
@@ -9233,6 +9252,7 @@ var BlockScene = function (_util$Entity2) {
         block.position = gridPosToPixelPos(closestSourcePos);
         document.getElementById("early-release-message").style.display = "block";
         updateEventDatabase(sceneEvents["droppedEarly"], this.currentTrial, closestSourcePos, this.targetPositions);
+        this.startTimer(this.resetTrial);
       }
       this.disableBlocksInteractivity();
       this.sourcePos = closestTargetPos;
@@ -9476,13 +9496,41 @@ var BlockScene = function (_util$Entity2) {
   return BlockScene;
 }(Entity);
 
+var ThanksScene = function (_util$Entity3) {
+  inherits(ThanksScene, _util$Entity3);
+
+  function ThanksScene() {
+    classCallCheck(this, ThanksScene);
+    return possibleConstructorReturn(this, (ThanksScene.__proto__ || Object.getPrototypeOf(ThanksScene)).apply(this, arguments));
+  }
+
+  createClass(ThanksScene, [{
+    key: "setup",
+    value: function setup() {
+      console.log("I'm in the thank you scene");
+      document.getElementById("thanks-block").style.display = "block";
+    }
+  }, {
+    key: "teardown",
+    value: function teardown() {}
+  }, {
+    key: "requestedTransition",
+    value: function requestedTransition(timeSinceStart) {
+      return this.done ? "next" : null;
+    }
+  }]);
+  return ThanksScene;
+}(Entity);
+
 var scenes = {
   intro: IntroScene,
-  block: BlockScene
+  block: BlockScene,
+  thanks: ThanksScene
 };
 
 var sceneTransitions = {
-  intro: "block"
+  intro: "block",
+  block: "thanks"
   // training: "block",
   // block: "gallery",
   // gallery: "results",
