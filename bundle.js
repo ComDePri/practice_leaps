@@ -8559,89 +8559,67 @@ function updateNewTrialInfo(trialNumber, sourcePos, targets) {
   }));
 }
 
-  var IntroScene = function (_util$Entity) {
-    inherits(IntroScene, _util$Entity);
+var IntroScene = function (_util$Entity) {
+  inherits(IntroScene, _util$Entity);
 
-    function IntroScene() {
-      classCallCheck(this, IntroScene);
-      return possibleConstructorReturn(this, (IntroScene.__proto__ || Object.getPrototypeOf(IntroScene)).apply(this, arguments));
+  function IntroScene() {
+    classCallCheck(this, IntroScene);
+    return possibleConstructorReturn(this, (IntroScene.__proto__ || Object.getPrototypeOf(IntroScene)).apply(this, arguments));
+  }
+
+  createClass(IntroScene, [{
+    key: "setup",
+    value: function setup() {
+      document.getElementById("intro-gui").style.display = "block";
+
+      document.getElementById("user-provided-id").addEventListener("keyup", this.onSetUserProvidedId.bind(this));
+
+      this.done = false;
+      document.getElementById("done-intro").disabled = true;
+      document.getElementById("done-intro").addEventListener("click", this.onDone.bind(this));
     }
+  }, {
+    key: "teardown",
+    value: function teardown() {
+      document.getElementById("intro-gui").style.display = "none";
+    }
+  }, {
+    key: "requestedTransition",
+    value: function requestedTransition(timeSinceStart) {
+      return this.done ? "next" : null;
+    }
+  }, {
+    key: "onSetUserProvidedId",
+    value: function onSetUserProvidedId(e) {
+      document.getElementById("done-intro").disabled = document.getElementById("user-provided-id").value.length === 0;
 
-    createClass(IntroScene, [{
-      key: "setup",
-      value: function setup() {
-        document.getElementById("intro-gui").style.display = "block";
-        document.getElementById("user-provided-id").addEventListener("keyup", this.onSetUserProvidedId.bind(this));
-
-        // MODIFICATION: Initialize two flags instead of just one 'done' flag
-        this.userFinishedIntro = false;
-        this.externalSignalReceived = !extStart;
-
-        document.getElementById("done-intro").disabled = true;
-        document.getElementById("done-intro").addEventListener("click", this.onDone.bind(this));
-
-        // MODIFICATION: Bind and add listener for the external key press
-        this.onGlobalKeyUp = this.onGlobalKeyUp.bind(this);
-        window.addEventListener("keyup", this.onGlobalKeyUp);
+      // If enter key pressed
+      if (e.keyCode === 13 && !document.getElementById("done-intro").disabled) {
+        this.onDone();
       }
-    }, {
-      key: "teardown",
-      value: function teardown() {
-        document.getElementById("intro-gui").style.display = "none";
-        // MODIFICATION: Remove the listener to prevent memory leaks or triggering in other scenes
-        window.removeEventListener("keyup", this.onGlobalKeyUp);
-      }
-    }, {
-      key: "requestedTransition",
-      value: function requestedTransition(timeSinceStart) {
-        // MODIFICATION: Only transition if the user clicked done AND the '5' key was pressed
-        return (this.userFinishedIntro && this.externalSignalReceived) ? "next" : null;
-      }
-    }, {
-      key: "onGlobalKeyUp",
-      value: function onGlobalKeyUp(e) {
-        // MODIFICATION: Check for key '5' (Key code 53 or e.key "5")
-        if ((e.key === "5" || e.keyCode === 53) && this.userFinishedIntro) {
-          this.externalSignalReceived = true;
-          // console.log("External signal received"); // Uncomment for debugging
-        }
-      }
-    }, {
-      key: "onSetUserProvidedId",
-      value: function onSetUserProvidedId(e) {
-        document.getElementById("done-intro").disabled = document.getElementById("user-provided-id").value.length === 0;
+    }
+  }, {
+    key: "onDone",
+    value: function onDone() {
+      playerData.customData.userProvidedId = document.getElementById("user-provided-id").value;
+      // redmetricsConnection.updatePlayer(playerData);
+      var currentTime = Date.now();
+      var today = new Date(currentTime);
 
-        // If enter key pressed
-        if (e.keyCode === 13 && !document.getElementById("done-intro").disabled) {
-          this.onDone();
-        }
-      }
-    }, {
-      key: "onDone",
-      value: function onDone() {
-        playerData.customData.userProvidedId = document.getElementById("user-provided-id").value;
-        // redmetricsConnection.updatePlayer(playerData);
-        var currentTime = Date.now();
-        var today = new Date(currentTime);
+      startAt = currentTime;
 
-        startAt = currentTime;
+      DB.ref('users/' + playerData.customData.userProvidedId).set({
+        // profile_picture : imageUrl
+        start_time: today.toUTCString()
+      });
 
-        DB.ref('users/' + playerData.customData.userProvidedId).set({
-          // profile_picture : imageUrl
-          start_time: today.toUTCString()
-        });
+      dbRef = 'users/' + playerData.customData.userProvidedId;
 
-        dbRef = 'users/' + playerData.customData.userProvidedId;
-
-        // MODIFICATION: Do not set transition flag yet. Just mark user as ready.
-        this.userFinishedIntro = true;
-
-        // Optional: Disable the button so they don't click it multiple times while waiting for the key
-        document.getElementById("done-intro").disabled = true;
-      }
-    }]);
-    return IntroScene;
-  }(Entity);
+      this.done = true;
+    }
+  }]);
+  return IntroScene;
+}(Entity);
 
 var BlockScene = function (_util$Entity2) {
   inherits(BlockScene, _util$Entity2);
@@ -8692,8 +8670,8 @@ var BlockScene = function (_util$Entity2) {
       this.nextTrial = this.nextTrial.bind(this);
       this.resetTrial = this.resetTrial.bind(this);
 
-      // document.getElementById("continue-btn").addEventListener("click", this.nextTrial);
-      // document.getElementById("reset-btn").addEventListener("click", this.resetTrial);
+      document.getElementById("continue-btn").addEventListener("click", this.nextTrial);
+      document.getElementById("reset-btn").addEventListener("click", this.resetTrial);
       document.getElementById("modal-confirm-cancel-button").addEventListener("click", this.cancelModal);
       document.getElementById("modal-confirm-done-button").addEventListener("click", this.confirmDone);
       document.getElementById("pixi-canvas").addEventListener("keyup", this.onKeyUp);
@@ -9578,9 +9556,6 @@ var allowEarlyExit = searchParams.get("allowEarlyExit") !== "false" && searchPar
 var showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
 var numTrials = searchParams.get("trials") ? parseInt(searchParams.get("trials")) : 30;
 var transitionDelay = searchParams.get("transitionDelay") ? parseInt(searchParams.get("transitionDelay")) : 300;
-var extStart = searchParams.get("extStart") === "true" || searchParams.get("extStart") === "1";
-
-console.log("ext start:", extStart);
 
 var buttonControls = searchParams.get("buttonControls") === "true";
 console.log(buttonControls);
